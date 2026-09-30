@@ -1,15 +1,24 @@
 ﻿import { BrowserRouter, NavLink, Route, Routes } from "react-router-dom";
 import { useState } from "react";
 import { ChevronDown, Menu, X } from "lucide-react";
-import Home from "./pages/home.jsx";
+import { StoreProvider } from "./context/StoreContext.jsx";
+import { useStore } from "./context/useStore.js";
+import Home from "./pages/Home.jsx";
 import Solution from "./pages/solution.jsx";
-import Pricing from "./pages/pricing.jsx";
+import Pricing from "./pages/Pricing.jsx";
 import Resources from "./pages/resources.jsx";
 import Login from "./pages/login.jsx";
+import Shop from "./pages/Shop.jsx";
+import ProductPage from "./pages/ProductPage.jsx";
+import CartPage from "./pages/CartPage.jsx";
+import CheckoutPage from "./pages/CheckoutPage.jsx";
+import OrdersPage from "./pages/OrdersPage.jsx";
+import AdminPage from "./pages/AdminPage.jsx";
 import "./App.css";
 
 function AppRoutes() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const { user, cart, signOut } = useStore();
   const closeMenu = () => setMenuOpen(false);
 
   return (
@@ -27,7 +36,11 @@ function AppRoutes() {
           >
             Solutions <ChevronDown size={16} />
           </NavLink>
-
+          <NavLink to="/shop" onClick={closeMenu}>Shop</NavLink>
+          {user && <NavLink to="/cart" onClick={closeMenu}>Cart ({cart.itemCount})</NavLink>}
+          {user && <NavLink to="/orders" onClick={closeMenu}>My orders</NavLink>}
+          {user?.role === "ADMIN" && <NavLink to="/admin" onClick={closeMenu}>Admin dashboard</NavLink>}
+          {!user && <NavLink to="/login" onClick={closeMenu}>Log in</NavLink>}
           <NavLink
             to="/pricing"
             className={({ isActive }) => (isActive ? "active-link" : "")}
@@ -55,13 +68,19 @@ function AppRoutes() {
         </div>
 
         <div className="nav-actions">
-          <NavLink to="/login" className="login" onClick={closeMenu}>
-            Log in
+          <NavLink to="/cart" className="login" onClick={closeMenu}>
+            Cart ({cart.itemCount})
           </NavLink>
-
-          <NavLink to="/pricing" className="start-btn" onClick={closeMenu}>
-            Start free trial
-          </NavLink>
+          {user ? (
+            <>
+              <NavLink to="/orders" className="login" onClick={closeMenu}>My orders</NavLink>
+              {user.role === "ADMIN" && <NavLink to="/admin" className="login" onClick={closeMenu}>Admin</NavLink>}
+              <button className="login nav-logout" onClick={() => { signOut(); closeMenu(); }}>Log out</button>
+            </>
+          ) : (
+            <NavLink to="/login" className="login" onClick={closeMenu}>Log in</NavLink>
+          )}
+          <NavLink to="/shop" className="start-btn" onClick={closeMenu}>Shop now</NavLink>
         </div>
 
         <button
@@ -75,6 +94,13 @@ function AppRoutes() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/shop" element={<Shop />} />
+        <Route path="/product/:id" element={<ProductPage />} />
+        <Route path="/cart" element={<CartPage />} />
+        <Route path="/checkout" element={<CheckoutPage />} />
+        <Route path="/orders" element={<OrdersPage />} />
+        <Route path="/register" element={<Login register />} />
+        <Route path="/admin" element={<AdminPage />} />
         <Route path="/solutions" element={<Solution />} />
         <Route path="/pricing" element={<Pricing />} />
         <Route path="/resources" element={<Resources />} />
@@ -88,7 +114,9 @@ function AppRoutes() {
 function App() {
   return (
     <BrowserRouter>
-      <AppRoutes />
+      <StoreProvider>
+        <AppRoutes />
+      </StoreProvider>
     </BrowserRouter>
   );
 }
